@@ -1,0 +1,37 @@
+import cv2 as cv
+import numpy as np
+from skimage.feature import blob_log
+import matplotlib.pyplot as plt
+from math import sqrt
+
+# Read the image
+img = cv.imread('the_berry_farms_sunflower_field.jpeg', cv.IMREAD_REDUCED_COLOR_4)
+gray = cv.cvtColor(img, cv.COLOR_RGB2GRAY)
+
+# Apply Gaussian blur to reduce noise
+blurred = cv.GaussianBlur(gray, (9,9), 0.1)
+laplacian = cv.Laplacian(blurred, cv.CV_64F)
+# Define parameters for blob detection
+min_sigma = 3
+max_sigma = 10
+threshold = 4
+# Detect blobs using Laplacian of Gaussians
+blobs = blob_log(laplacian, min_sigma=min_sigma,max_sigma=max_sigma, threshold=threshold)
+
+blobs[:, 2] = blobs[:, 2] * sqrt(2)
+max_radius_index = np.argmax(blobs[:, 2])
+largest_circle_params = blobs[max_radius_index]
+y, x, r = largest_circle_params
+print(f"Radius (r): {r}")
+print(f"Center (x, y): ({x}, {y})")
+# Draw circles on the original grayscale image
+for blob in blobs:
+    y, x, r = blob  # Blob format is (y, x, r)
+    cv.circle(img, (int(x), int(y)), int(r), (0,0,255),thickness=1, lineType=cv.LINE_AA)  # Draw circles in white
+
+
+plt.figure(figsize=(5, 5))
+plt.imshow(cv.cvtColor(img, cv.COLOR_BGR2RGB))
+plt.axis('off')
+plt.title('Detected blobs')
+plt.show()
